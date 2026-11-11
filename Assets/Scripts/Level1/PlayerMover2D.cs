@@ -13,12 +13,21 @@ namespace LibraryEscape
         public SpriteRenderer shieldRenderer;
         public SpriteFrameAnimator animator;
 
+        [Header("Шаги")]
+        [Tooltip("Интервал между шагами, секунды.")]
+        public float stepInterval = 0.33f;
+        [Tooltip("Громкость шагов (тихо).")]
+        [Range(0f, 1f)] public float stepVolume = 0.11f;
+
         private Rigidbody2D _body;
         private Vector2 _input;
         private float _invulnerableUntil;
         private bool _shieldCaptured;
         private Vector3 _shieldBaseScale = Vector3.one;
         private float _shieldBaseAlpha = 0.75f;
+        private AudioSource _steps;
+        private AudioClip[] _stepClips;
+        private float _stepTimer;
 
         public bool IsInvulnerable { get { return Time.time < _invulnerableUntil; } }
         public Vector2 Facing { get; private set; } = Vector2.down;
@@ -31,7 +40,24 @@ namespace LibraryEscape
             _body.interpolation = RigidbodyInterpolation2D.Interpolate;
             _body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
+            BuildFootsteps();
             ApplyFacingRotation();
+        }
+
+        private void BuildFootsteps()
+        {
+            _steps = gameObject.GetComponent<AudioSource>();
+            if (_steps == null) _steps = gameObject.AddComponent<AudioSource>();
+            _steps.playOnAwake = false;
+            _steps.spatialBlend = 0f;
+
+            _stepClips = new[]
+            {
+                SoundKit.Footstep("Step 1", 11),
+                SoundKit.Footstep("Step 2", 23),
+                SoundKit.Footstep("Step 3", 37),
+                SoundKit.Footstep("Step 4", 53)
+            };
         }
 
         private void Update()
@@ -60,7 +86,30 @@ namespace LibraryEscape
 
             if (animator != null) animator.playing = canMove && _input.sqrMagnitude > 0.01f;
 
+            UpdateFootsteps(canMove);
             UpdateShield();
+        }
+
+        /// <summary>Тихие шаги: играют по таймеру, пока персонаж реально движется.</summary>
+        private void UpdateFootsteps(bool canMove)
+        {
+            bool walking = canMove && _body != null && _body.linearVelocity.sqrMagnitude > 1f;
+
+            if (!walking)
+            {
+                _stepTimer = 0f;
+                return;
+            }
+
+            _stepTimer -= Time.deltaTime;
+            if (_stepTimer > 0f) return;
+
+            _stepTimer = Mathf.Max(0.12f, stepInterval);
+
+            if (_steps != null && _stepClips != null && _stepClips.Length > 0)
+            {
+                _steps.PlayOneShot(_stepClips[Random.Range(0, _stepClips.Length)], stepVolume);
+            }
         }
 
         /// <summary>Поворачивает спрайт по направлению движения. Спрайт игрока нарисован лицом вверх.</summary>
