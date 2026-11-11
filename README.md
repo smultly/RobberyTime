@@ -251,3 +251,25 @@ Assets/Scripts/
 - `UiKit` и `SoundKit` — утилиты без состояния: вся разметка UI и генерация звуков в одном месте.
 - Сборка сцен (`*Bootstrap`) отделена от правил (`*Game`): bootstrap создаёт объекты,
   game управляет правилами и UI.
+
+## Сборка релиза
+
+1. `Tools > Library Escape > 1. Prepare Release Settings` — выставит:
+   - название **RobberyTime**, компанию, версию **1.0.0**;
+   - окно 1600×900, оконный режим, ресайз, Alt+Enter, один экземпляр игры;
+   - порядок сцен `MainMenu → Level1 → Level2` (SampleScene из сборки убирается);
+   - вертикальную синхронизацию.
+2. `Tools > Library Escape > 2. Build Windows x64` — соберёт игру в
+   `Builds/Win64/RobberyTime.exe` и откроет папку.
+
+Сборка из командной строки (Unity должна быть закрыта):
+
+```
+"C:\Program Files\Unity\Hub\Editor\6000.6.2f1\Editor\Unity.exe" -batchmode -quit ^
+  -projectPath "D:\UnityProjects\UnityGame" ^
+  -executeMethod LibraryEscape.EditorTools.ReleaseTools.PrepareReleaseAndBuild ^
+  -logFile "D:\UnityProjects\UnityGame\Logs\build.log"
+```
+
+Папка `Builds/` не попадает в git. Для выгрузки на itch.io загружается всё содержимое
+`Builds/Win64` (exe + `RobberyTime_Data` + UnityPlayer.dll), рендер — Windows 64-bit.
